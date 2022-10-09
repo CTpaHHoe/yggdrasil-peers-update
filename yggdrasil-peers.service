@@ -1,0 +1,14 @@
+[Unit]
+Description=Daily update yggdrasil peers
+RequiresMountsFor=/usr/local/sbin /var/lib
+ConditionPathExists=/var/lib/yggdrasil-peers
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/var/lib/yggdrasil-peers
+ExecStart=/usr/local/sbin/yggdrasil-peers-update.sh -c /etc/default/yggdrasil-peers
+ExecStartPost=/usr/bin/systemctl restart yggdrasil
+
+[Install]
+WantedBy=default.target
