@@ -47,7 +47,6 @@ die() {
 
 list_peer_urls() {
     local countries="
-        europe/zalupa
         europe/czechia
         europe/finland
         europe/france
@@ -257,8 +256,8 @@ parse_params() {
 cleanup() {
     trap - SIGINT SIGTERM ERR EXIT
     # script cleanup here
-    #find "${DATA_DIR}" -name '*.md' -type f -delete 2>/dev/null || true
-    #rm "${HOSTS_FILE}" "${PEERS_FILE}" 2>/dev/null || true
+    find "${DATA_DIR}" -name '*.md' -type f -maxdepth 1 -delete 2>/dev/null || true
+    rm "${HOSTS_FILE}" "${PEERS_FILE}" 2>/dev/null || true
 }
 
 main() {
