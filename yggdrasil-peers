@@ -3,9 +3,26 @@ NUM_PEERS=12
 YGG_CONF_FILE='/etc/yggdrasil.conf'
 
 DATA_DIR="/var/lib/yggdrasil-peers"
-# HOSTS_FILE="${DATA_DIR}/hosts.txt"
-# PEERS_FILE="${DATA_DIR}/peers.txt"
-# FASTEST_HOSTS_FILE="${DATA_DIR}/hosts-fastest.txt"
-# FASTEST_PEERS_FILE="${DATA_DIR}/peers-fastest.txt"
-# FASTEST_PEERS_JSON_FILE="${DATA_DIR}/peers-fastest.json"
+#HOSTS_FILE="${DATA_DIR}/hosts.txt"
+#PEERS_FILE="${DATA_DIR}/peers.txt"
+#FASTEST_HOSTS_FILE="${DATA_DIR}/hosts-fastest.txt"
+#FASTEST_PEERS_FILE="${DATA_DIR}/peers-fastest.txt"
+#FASTEST_PEERS_JSON_FILE="${DATA_DIR}/peers-fastest.json"
+
+#countries="
+#	europe/czechia
+#	europe/finland
+#	europe/france
+#	europe/germany
+#	europe/netherlands
+#	europe/poland
+#	europe/romania
+#	europe/russia
+#	europe/slovakia
+#	europe/sweden
+#	europe/ukraine
+#	europe/united-kingdom
+#	north-america/canada
+#	north-america/united-states
+#"
 

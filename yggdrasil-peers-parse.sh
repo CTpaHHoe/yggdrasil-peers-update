@@ -9,6 +9,24 @@ declare CONF_FILE
 declare DATA_DIR
 declare SILENT
 declare HOSTS_FILE
+declare COUNTRIES
+
+countries="
+	europe/czechia
+	europe/finland
+	europe/france
+	europe/germany
+	europe/netherlands
+	europe/poland
+	europe/romania
+	europe/russia
+	europe/slovakia
+	europe/sweden
+	europe/ukraine
+	europe/united-kingdom
+	north-america/canada
+	north-america/united-states
+"
 
 trimL() {
     # shellcheck disable=SC2001
@@ -46,22 +64,7 @@ die() {
 
 
 list_peer_urls() {
-    local countries="
-        europe/czechia
-        europe/finland
-        europe/france
-        europe/germany
-        europe/netherlands
-        europe/poland
-        europe/romania
-        europe/russia
-        europe/slovakia
-        europe/sweden
-        europe/united-kingdom
-        north-america/canada
-        north-america/united-states
-    "
-    for country in ${countries}
+    for country in ${COUNTRIES}
     do
         echo "https://raw.githubusercontent.com/yggdrasil-network/public-peers/master/${country}.md"
     done
@@ -117,7 +120,7 @@ function make_peer_list() {
         param="${BASH_REMATCH[5]}"
         echo "${proto}|${host}|${port}|${param}"
         #TODO: !!!!
-    done < <(find "${DATA_DIR}" -name '*.md' -type f -maxdepth 1 -exec cat {} \;)
+    done < <(find "${DATA_DIR}" -maxdepth 1 -name '*.md' -type f -exec cat {} \;)
     msg "OK"
 }
 
@@ -256,7 +259,7 @@ parse_params() {
 cleanup() {
     trap - SIGINT SIGTERM ERR EXIT
     # script cleanup here
-    find "${DATA_DIR}" -name '*.md' -type f -maxdepth 1 -delete 2>/dev/null || true
+    find "${DATA_DIR}" -maxdepth 1 -name '*.md' -type f -delete 2>/dev/null || true
     rm "${HOSTS_FILE}" "${PEERS_FILE}" 2>/dev/null || true
 }
 
@@ -265,6 +268,7 @@ main() {
     SILENT=${SILENT:-0}
     NUM_PEERS=${NUM_PEERS:-8}
     DATA_DIR=${DATA_DIR:-"/var/lib/yggdrasil"}
+	COUNTRIES="${COUNTRIES:-${countries}}"
     CONF_FILE=${CONF_FILE:-""}
 
     if [ -r "${CONF_FILE}" ]; then
@@ -285,6 +289,7 @@ main() {
     msg "CONF_FILE: ${CONF_FILE}"
     msg "DATA_DIR : ${DATA_DIR}"
     msg "SILENT   : ${SILENT}"
+	msg "COUNTRIES: ${COUNTRIES}"
 
     if [ ! -d "${DATA_DIR}" ]; then
         msg "create data dir: ${DATA_DIR}"
