@@ -10,6 +10,7 @@ declare DATA_DIR
 declare SILENT
 declare HOSTS_FILE
 declare COUNTRIES
+declare STATIC_PEERS
 
 countries="
 	europe/czechia
@@ -81,7 +82,7 @@ function download_peer_files() {
         die "Cannot find curl or wget binary" 14
     fi
 
-    pushd "${DATA_DIR}" > /dev/null || exit 32
+    pushd "${DATA_DIR}" > /dev/null
     for jj in $(list_peer_urls)
     do
         if $DL "${jj}" ; then
@@ -90,7 +91,7 @@ function download_peer_files() {
             msg "  FAIL : ${jj}"
         fi
     done
-    popd
+    popd > /dev/null
 
 
     msg "OK"
@@ -156,11 +157,6 @@ function make_fastest_hosts_list_fping() {
         awk -F'[: ]' '{ print $2 }' | \
         head --lines="${NUM_PEERS}"  > "${FASTEST_HOSTS_FILE}"
 
-    ##(fping -q -a -c 16 --dontfrag --size=1250 -f "${HOSTS_FILE}" || true) 2> "${DATA_DIR}/1.tmp"
-    ##awk -F'/' 'NF>=8 { print $8 ":" $0 } ' "${DATA_DIR}/1.tmp" > "${DATA_DIR}/2.tmp"
-    ##sort -n "${DATA_DIR}/2.tmp" > "${DATA_DIR}/3.tmp"
-    ##awk -F'[: ]' '{ print $2 }' "${DATA_DIR}/3.tmp" > "${DATA_DIR}/4.tmp"
-    ##head --lines="${NUM_PEERS}" "${DATA_DIR}/4.tmp"  > "${FASTEST_HOSTS_FILE}"
     msg "OK"
 }
 
@@ -204,6 +200,7 @@ Available options:
 -c, --conf-file file    Some flag description
 -d, --data-dir  dir
 -n, --num-peers N       Some param description
+-p, --peer              Add static peer
 EOF
   exit
 }
@@ -243,6 +240,10 @@ parse_params() {
                 DATA_DIR="${2-}"
                 shift
                 ;;
+            -p | --peer)
+                STATIC_PEERS="${2-} ${STATIC_PEERS}"
+                shift
+                ;;
             -?*) die "Unknown option: $1" ;;
             *) break ;;
         esac
@@ -270,6 +271,7 @@ main() {
     DATA_DIR=${DATA_DIR:-"/var/lib/yggdrasil"}
 	COUNTRIES="${COUNTRIES:-${countries}}"
     CONF_FILE=${CONF_FILE:-""}
+    STATIC_PEERS=${STATIC_PEERS:-""}
 
     if [ -r "${CONF_FILE}" ]; then
         #shellcheck disable=SC1090
@@ -307,6 +309,12 @@ main() {
         make_fastest_hosts_list_ping
     fi
 
+    if [ -n "${STATIC_PEERS}" ]; then
+        for peer in ${STATIC_PEERS}; do
+            printf "%s\n" "${peer}" >> "${FASTEST_PEERS_FILE}"
+        done
+    fi
+
     declare hosts mask
     readarray -t hosts < "${FASTEST_HOSTS_FILE}"
     mask="$(join_by \| "${hosts[@]}")"
@@ -318,8 +326,10 @@ main() {
             else
                 printf "%s://%s:%s\n" "$proto" "$host" "$port"
             fi
-        done | tee "${FASTEST_PEERS_FILE}" \
-             | make_fastest_peers_json | tee "${FASTEST_PEERS_JSON_FILE}"
+        done >> "${FASTEST_PEERS_FILE}"
+
+
+    make_fastest_peers_json < "${FASTEST_PEERS_FILE}" > "${FASTEST_PEERS_JSON_FILE}"
 
 }
 
