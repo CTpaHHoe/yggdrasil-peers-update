@@ -119,7 +119,7 @@ function make_peer_list() {
         host="${BASH_REMATCH[2]}"
         port="${BASH_REMATCH[3]}"
         param="${BASH_REMATCH[5]}"
-        echo "${proto}|${host}|${port}|${param}"
+        echo "${proto}!${host}!${port}!${param}"
         #TODO: !!!!
     done < <(find "${DATA_DIR}" -maxdepth 1 -name '*.md' -type f -exec cat {} \;)
     msg "OK"
@@ -127,10 +127,26 @@ function make_peer_list() {
 
 function make_hosts_list() {
     msg "Parse hosts"
-    awk -F'|' '{ print $2 }' "${PEERS_FILE}" | sort -u > "${HOSTS_FILE}"
+    awk -F'!' '{ print $2 }' "${PEERS_FILE}" | sort -u > "${HOSTS_FILE}"
     msg "OK"
 }
 
+function get_failed_to_dial() {
+    if command -v journalctl; then
+        journalctl --unit=yggdrasil --no-pager --grep='Failed to dial' --since='-12h'
+    else
+        grep 'yggdrasil' /var/log/syslog | grep 'Failed to dial'
+    fi
+}
+
+function make_failed_peers_list() {
+    msg "Detect failed peers"
+    get_failed_to_dial | \
+        grep -oP '(TCP|TLS)\s+(.*)(?=: dial)' | \
+        tr ':' '!' | \
+        sort -u | \
+        awk '{ print tolower($1)"!"$2"!"$3 }'
+}
 
 function make_fastest_hosts_list_ping() {
     declare nlines host
@@ -261,7 +277,8 @@ cleanup() {
     trap - SIGINT SIGTERM ERR EXIT
     # script cleanup here
     find "${DATA_DIR}" -maxdepth 1 -name '*.md' -type f -delete 2>/dev/null || true
-    rm "${HOSTS_FILE}" "${PEERS_FILE}" 2>/dev/null || true
+    rm "${HOSTS_FILE}" 2>/dev/null || true
+    #rm "${HOSTS_FILE}" "${PEERS_FILE}" 2>/dev/null || true
 }
 
 main() {
@@ -286,6 +303,7 @@ main() {
     FASTEST_HOSTS_FILE=${FASTEST_HOSTS_FILE:-"${DATA_DIR}/hosts-fastest.txt"}
     FASTEST_PEERS_FILE=${FASTEST_PEERS_FILE:-"${DATA_DIR}/peers-fastest.txt"}
     FASTEST_PEERS_JSON_FILE=${FASTEST_PEERS_JSON_FILE:-"${DATA_DIR}/peers-fastest.json"}
+    FAILED_PEERS_FILE=${FAILED_PEERS_FILE:-"${DATA_DIR}/peers-failed.txt"}
 
     msg "NUM_PEERS: ${NUM_PEERS}"
     msg "CONF_FILE: ${CONF_FILE}"
@@ -297,11 +315,21 @@ main() {
         msg "create data dir: ${DATA_DIR}"
         mkdir -p "${DATA_DIR}"
     fi
-    #cd "${DATA_DIR}" || die "cant cd: ${DATA_DIR}" 13
 
     rm "${HOSTS_FILE}" "${PEERS_FILE}" "${FASTEST_HOSTS_FILE}" "${FASTEST_PEERS_FILE}" "${FASTEST_PEERS_JSON_FILE}" >& /dev/null || true
     download_peer_files
     make_peer_list > "${PEERS_FILE}"
+    make_failed_peers_list > "${FAILED_PEERS_FILE}"
+
+    declare hosts peers mask tmp
+    readarray -t peers < "${FAILED_PEERS_FILE}"
+    mask="$(join_by \| "${peers[@]}")"
+
+    tmp=$(mktemp "${DATA_DIR}/peers.XXXX")
+    grep -vP "${mask}" "${PEERS_FILE}" > "${tmp}"
+    mv "${tmp}" "${PEERS_FILE}"
+
+
     make_hosts_list
     if command -v fping >& /dev/null; then
         make_fastest_hosts_list_fping
@@ -315,11 +343,10 @@ main() {
         done
     fi
 
-    declare hosts mask
     readarray -t hosts < "${FASTEST_HOSTS_FILE}"
     mask="$(join_by \| "${hosts[@]}")"
     grep -P "${mask}" "${PEERS_FILE}" | \
-        while IFS='|' read -r proto host port param
+        while IFS='!' read -r proto host port param
         do
             if [ -n "$param" ]; then
                 printf "%s://%s:%s?%s\n" "$proto" "$host" "$port" "$param"
