@@ -133,7 +133,7 @@ function make_hosts_list() {
 
 function get_failed_to_dial() {
     if command -v journalctl; then
-        journalctl --unit=yggdrasil --no-pager --grep='Failed to dial' --since='-12h'
+        journalctl --unit=yggdrasil --no-pager --grep='Failed to dial' --since='-1d'
     else
         grep 'yggdrasil' /var/log/syslog | grep 'Failed to dial'
     fi
