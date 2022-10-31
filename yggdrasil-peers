@@ -26,3 +26,8 @@ DATA_DIR="/var/lib/yggdrasil-peers"
 #	north-america/united-states
 #"
 
+#STATIC_PEERS="
+#    tls://kazi.peer.cofob.ru:18001
+#    tls://[2a01:d0:ffff:4353::2]:6010
+#    tcp://itcom.multed.com:7991
+#"
