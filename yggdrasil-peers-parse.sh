@@ -137,15 +137,18 @@ function get_failed_to_dial() {
     else
         grep 'yggdrasil' /var/log/syslog | grep 'Failed to dial'
     fi
+    return 0
 }
 
 function make_failed_peers_list() {
     msg "Detect failed peers"
+    set +o pipefail
     get_failed_to_dial | \
-        grep -oP '(TCP|TLS)\s+(.*)(?=: dial)' | \
+        grep -oP '(TCP|TLS)\s+(\S+)(?=:\s)' | \
         tr ':' '!' | \
         sort -u | \
         awk '{ print tolower($1)"!"$2"!"$3 }'
+    set -o pipefail   
 }
 
 function make_fastest_hosts_list_ping() {
@@ -323,11 +326,13 @@ main() {
 
     declare hosts peers mask tmp
     readarray -t peers < "${FAILED_PEERS_FILE}"
-    mask="$(join_by \| "${peers[@]}")"
+    if [ "${#peers[@]}" -ne 0 ]; then
+    	mask="$(join_by \| "${peers[@]}")"
 
-    tmp=$(mktemp "${DATA_DIR}/peers.XXXX")
-    grep -vP "${mask}" "${PEERS_FILE}" > "${tmp}"
-    mv "${tmp}" "${PEERS_FILE}"
+    	tmp=$(mktemp "${DATA_DIR}/peers.XXXX")
+    	grep -vP "${mask}" "${PEERS_FILE}" > "${tmp}"
+    	mv "${tmp}" "${PEERS_FILE}"
+    fi
 
 
     make_hosts_list
