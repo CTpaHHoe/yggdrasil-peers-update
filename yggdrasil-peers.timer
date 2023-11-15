@@ -5,9 +5,9 @@ After=network-online.target
 Wants=network-online.target
 
 [Timer]
-OnCalendar=daily
-RandomizedDelaySec=12h
-Persistent=true
+OnBootSec=20m
+OnUnitActiveSec=60m
+RandomizedDelaySec=10m
 
 [Install]
 WantedBy=timers.target
