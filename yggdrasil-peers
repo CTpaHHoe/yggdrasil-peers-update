@@ -9,7 +9,7 @@ DATA_DIR="/var/lib/yggdrasil-peers"
 #FASTEST_PEERS_FILE="${DATA_DIR}/peers-fastest.txt"
 #FASTEST_PEERS_JSON_FILE="${DATA_DIR}/peers-fastest.json"
 
-#countries="
+#COUNTRIES="
 #	europe/czechia
 #	europe/finland
 #	europe/france
@@ -27,7 +27,7 @@ DATA_DIR="/var/lib/yggdrasil-peers"
 #"
 
 #STATIC_PEERS="
-#    tls://kazi.peer.cofob.ru:18001
-#    tls://[2a01:d0:ffff:4353::2]:6010
-#    tcp://itcom.multed.com:7991
+#	tls://62.109.3.213:18001
+#	tls://62.109.2.248:18001
+#  tls://185.49.110.59:18001	
 #"
